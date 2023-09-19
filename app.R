@@ -5,9 +5,7 @@ library(shinythemes)
 library(DT)
 library(plotly)
 source("spotify_functions.R")
-
-client_id <- "8fea6e24930c4aebbca86a6c887b61e9"
-client_secret <- "c7df85ba9d2145f18a761b291537b111"
+source("config.R") # fetch the client_id and secret
 
 ui <- fluidPage(theme = shinytheme("darkly"),
                 titlePanel("Spotify Music Analysis"),
@@ -128,7 +126,6 @@ server <- function(input, output, session) {
     print('fsfasfsafsasa')
     if (!is.null(audio_features)) {
       # Create a scatter plot using plotly
-      print('hiiiiiii')
       plot <- ggplot(audio_features, aes(x = energy, y = valence)) +
         geom_point() +
         labs(x = "Energy", y = "Valence") 
