@@ -69,36 +69,41 @@ get_artists <- function(artist_name, token) {
   return(artists)
 }
 
-
 get_top_tracks_with_features <- function(artist_id, access_token, country = "US") {
   library(httr)
-
+  
+  # Validate input parameters
+  if (is.null(artist_id) || is.null(access_token)) {
+    cat("Error: Artist ID and access token are required.\n")
+    return(NULL)
+  }
+  
   # Construct the URL for the top tracks endpoint
   url <- paste0("https://api.spotify.com/v1/artists/", artist_id, "/top-tracks")
-
+  
   # Make the GET request to fetch the top tracks
   response <- GET(
     url = url,
-    limit = 100,
+    limit = 50,  # Limit the number of tracks for demonstration purposes
     query = list(country = country),
     add_headers(Authorization = paste("Bearer", access_token))
   )
-
+  
   # Check for a successful HTTP response
   if (http_status(response)$category != "Success") {
     cat("Error: Unable to fetch top tracks.\n")
     return(NULL)
   }
-
+  
   # Parse the response content to extract top tracks
   song_data <- content(response)
   songs <- song_data$tracks
-
+  
   # Initialize an empty data frame to store track information
   track_df <- data.frame(
-    TrackName = character(0),
-    AlbumName = character(0),
-    TrackURI = character(0),
+    track_name = character(0),
+    album_name = character(0),
+    track_uri = character(0),
     Popularity = integer(0),
     Danceability = numeric(0),
     Energy = numeric(0),
@@ -108,46 +113,46 @@ get_top_tracks_with_features <- function(artist_id, access_token, country = "US"
     Tempo = numeric(0),
     stringsAsFactors = FALSE
   )
-
+  
   # Fetch audio features and other track information for each track
   for (i in 1:length(songs)) {
     track <- songs[[i]]
     track_id <- track$id
-
+    
     audio_response <- GET(
       url = paste0("https://api.spotify.com/v1/audio-features/", track_id),
       add_headers(Authorization = paste("Bearer", access_token))
     )
-
+    
     if (http_status(audio_response)$category != "Success") {
-      cat("Error: Unable to fetch audio features for track.\n")
-      return(NULL)
+      cat(paste("Error: Unable to fetch audio features for track ", track_id, ".\n", sep = ""))
+      # You can choose to continue or break here based on your requirements
+      next  # Skip to the next track
     }
-
+    
     audio_data <- content(audio_response)
-
+    
     # Create a new row with track information and audio features
     new_row <- data.frame(
-      TrackName = track$name,
-      AlbumName = track$album$name,
-      TrackURI = track$uri,
-      Popularity = track$popularity,
-      Danceability = audio_data$danceability,
-      Energy = audio_data$energy,
-      Speechiness = audio_data$speechiness,
-      Instrumentalness = audio_data$instrumentalness,
-      Valence = audio_data$valence,  # Added Valence column
-      Tempo = audio_data$tempo,
+      track_name = track$name,
+      album_name = track$album$name,
+      track_uri = track$uri,
+      popularity = track$popularity,
+      danceability = audio_data$danceability,
+      energy = audio_data$energy,
+      speechiness = audio_data$speechiness,
+      instrumentalness = audio_data$instrumentalness,
+      valence = audio_data$valence,  # Added Valence column
+      tempo = audio_data$tempo,
       stringsAsFactors = FALSE
     )
-
+    
     # Append the new row to the data frame
     track_df <- rbind(track_df, new_row)
   }
-
+  
   return(track_df)
 }
-
 
 
 
@@ -388,15 +393,19 @@ get_tracks_features <- function(tracks, token) {
     audio_features_list[[length(audio_features_list) + 1]] <- get_audio_features_batch(batch_track_ids, token)
   }
   
+  print(tracks)
   # Combine the audio features from all batches
   audio_features_df <- do.call(rbind.data.frame, audio_features_list)
-  
   # Convert all numerical columns to type numeric
   numeric_columns <- sapply(audio_features_df, is.numeric)
   audio_features_df[numeric_columns] <- lapply(audio_features_df[numeric_columns], as.numeric)
   audio_features_df$energy <- as.numeric(audio_features_df$energy)
   audio_features_df$valence <- as.numeric(audio_features_df$valence)
-  
-  return(audio_features_df)
+  audio_features_df$danceability <- as.numeric(audio_features_df$danceability)
+  #audio_features_df$id <- as.numeric(audio_features_df$id)
+  #tracks$track_uri <- as.numeric(tracks$track_uri)
+  print(audio_features_df)
+  result <- merge(tracks, audio_features_df, 
+                  by.x = "track_uri", by.y = "id", all = FALSE)
+  return(result)
 }
-

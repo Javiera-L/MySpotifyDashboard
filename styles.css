@@ -1,0 +1,19 @@
+/* datatables.css */
+
+/* Target the entire DataTable (including header and rows) */
+.dataTables_wrapper {
+  background-color: #ffffff; /* Background color of the entire DataTable */
+  color: #000000; /* Text color */
+}
+
+/* Target the DataTable header */
+.dataTables_scrollHead {
+  background-color: #007BFF; /* Header background color */
+  color: #ffffff; /* Header text color */
+}
+
+/* Target the DataTable rows */
+.dataTables_scrollBody tr {
+  background-color: #f2f2f2; /* Row background color */
+  color: #000000; /* Row text color */
+}
