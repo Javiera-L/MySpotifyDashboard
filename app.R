@@ -45,19 +45,22 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                                     
                     )),
                     
-                    
+                    tags$style(type="text/css",
+                               ".shiny-output-error { visibility: hidden; }",
+                               ".shiny-output-error:before { visibility: hidden; }"
+                    ),
                     
                     tabsetPanel(
                       tabPanel("About", 
                                HTML(about_content)),
                       tabPanel("Valence vs. Energy", 
                                conditionalPanel(
-                                 condition = "input.artist_selected !== null",
+                                 condition = "input.artist_selected.length > 0",
                                  plotlyOutput(outputId = "valence_energy_plot", width="100%")
                                ),
                                conditionalPanel(
                                  condition = "input.artist_selected == null",
-                                 "Please select an artist to view this content."
+                                 "The content will become visible once you've chosen an artist."
                                )
                       ),
                       tabPanel("Danceability Distribution",
@@ -67,7 +70,7 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                                ),
                                conditionalPanel(
                                  condition = "input.artist_selected == null",
-                                 "Please select an artist to view this content."
+                                 "The content will become visible once you've chosen an artist"
                                )
                       )
                     )
