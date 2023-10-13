@@ -52,7 +52,7 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                                HTML(about_content)),
                       tabPanel("Valence vs. Energy", 
                                conditionalPanel(
-                                 condition = "input.artist_selected != null",
+                                 condition = "input.artist_selected !== null",
                                  plotlyOutput(outputId = "valence_energy_plot", width="100%")
                                ),
                                conditionalPanel(
@@ -62,11 +62,11 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                       ),
                       tabPanel("Danceability Distribution",
                                conditionalPanel(
-                                 condition = "input.artist_selected == true",
+                                 condition = "input.artist_selected !== null",
                                  plotlyOutput(outputId = "danceability_density_plot")
                                ),
                                conditionalPanel(
-                                 condition = "!input.artist_selected",
+                                 condition = "input.artist_selected == null",
                                  "Please select an artist to view this content."
                                )
                       )
