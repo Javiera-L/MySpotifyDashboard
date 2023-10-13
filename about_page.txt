@@ -1,0 +1,47 @@
+<h2>Motivation</h2>
+<p>
+  I've long been curious about making the most of Spotify's data, which gives insights into tracks, from their tempo to energy. My goal was to create a web app for music lovers and musician friends to explore artists and their work.
+</p>
+
+<h2>Features and Uses</h2>
+<p>
+  This resource is a platform to explore Spotify features like valence, energy, and danceability*. (*Check the official definitions below.)
+</p>
+
+<p>
+  The 'Valence vs Energy' tab helps you understand how a song's energy and mood relate. High valence and energy mean a happier vibe, while low energy and valence signal a sadder mood.
+</p>
+
+<h3>You Can Use It To:</h3>
+<ul>
+  <li>Figure out a song's mood from a musical perspective.</li>
+  <li>Discover connections between an artist's tracks based on their mood.</li>
+  <li>Group tracks by mood.</li>
+  <li>Create playlists with similar mood songs.</li>
+</ul>
+
+<p>
+  The 'Danceability' tab visualizes how danceable songs are. You can:
+</p>
+
+<ul>
+  <li>Compare artists based on danceability.</li>
+  <li>Find the most and least danceable songs.</li>
+  <li>Create playlists based on this info.</li>
+</ul>
+
+<h2>Key Terms</h2>
+<p>
+  (Definitions from Spotify's API.)
+</p>
+
+<dl>
+  <dt>Danceability:</dt>
+  <dd>Measures how suitable a track is for dancing based on elements like tempo, rhythm, and beat strength. Scores range from 0.0 (not danceable) to 1.0 (most danceable).</dd>
+  
+  <dt>Energy:</dt>
+  <dd>Rates a track's intensity from 0.0 to 1.0. Energetic tracks feel fast and loud, like death metal, while less energetic tracks are more mellow.</dd>
+  
+  <dt>Valence:</dt>
+  <dd>Describes a track's positivity from 0.0 to 1.0. High valence means it sounds positive and cheerful, while low valence is more negative and somber.</dd>
+</dl>

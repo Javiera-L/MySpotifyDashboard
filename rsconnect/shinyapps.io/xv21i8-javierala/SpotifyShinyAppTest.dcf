@@ -1,0 +1,12 @@
+name: SpotifyShinyAppTest
+title: SpotifyShinyAppTest
+username: xv21i8-javierala
+account: xv21i8-javierala
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10170253
+bundleId: 7795014
+url: https://xv21i8-javierala.shinyapps.io/SpotifyShinyAppTest/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

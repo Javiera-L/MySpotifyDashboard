@@ -7,6 +7,10 @@ library(plotly)
 source("spotify_functions.R")
 source("config.R") # fetch the client_id and secret
 
+shiny::devmode(TRUE)
+
+about_content <- readLines("about_page.txt", warn = FALSE)
+
 ui <- fluidPage(theme = shinytheme("darkly"),
                 titlePanel("Spotify Music Analysis"),
                 sidebarLayout(
@@ -19,7 +23,7 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                   ),
                   mainPanel(
                     tags$style(HTML("
-                         .dataTables_wrapper {
+                    .dataTables_wrapper {
                     background-color: #ffffff; /* Background color of the entire DataTable */
                     color: #000000; /* Text color */
                   }
@@ -42,12 +46,29 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                     )),
                     
                     
+                    
                     tabsetPanel(
-                      tabPanel("About"),
+                      tabPanel("About", 
+                               HTML(about_content)),
                       tabPanel("Valence vs. Energy", 
-                               plotlyOutput(outputId = "valence_energy_plot")),
+                               conditionalPanel(
+                                 condition = "input.artist_selected != null",
+                                 plotlyOutput(outputId = "valence_energy_plot", width="100%")
+                               ),
+                               conditionalPanel(
+                                 condition = "input.artist_selected == null",
+                                 "Please select an artist to view this content."
+                               )
+                      ),
                       tabPanel("Danceability Distribution",
-                               plotlyOutput(outputId = "danceability_density_plot")
+                               conditionalPanel(
+                                 condition = "input.artist_selected == true",
+                                 plotlyOutput(outputId = "danceability_density_plot")
+                               ),
+                               conditionalPanel(
+                                 condition = "!input.artist_selected",
+                                 "Please select an artist to view this content."
+                               )
                       )
                     )
                   )
@@ -65,6 +86,7 @@ server <- function(input, output, session) {
   artist_albums <- reactiveVal(NULL)
   artist_tracks <- reactiveVal(NULL)
   audio_features <- reactiveVal(NULL)
+  selected_track <- reactiveVal(NULL)
   
   observeEvent(input$search_button, {
     artist_input <- input$artist_input
@@ -93,6 +115,7 @@ server <- function(input, output, session) {
         return()  # No selection, nothing to do
       }
       
+      selected_track(NULL)
       # Update the selected artist's information when an artist is clicked
       selected_artist(artists[selected_row, , drop = FALSE])
       
@@ -136,44 +159,85 @@ server <- function(input, output, session) {
           searching = FALSE,  # Disable the search bar
           info = FALSE,
           lengthChange = FALSE,
-          pageLength = 15
+          pageLength = 10
         ),
         colnames = c("Track", "Album")
       )
     }
   })
   
-  # # Create a reactive expression to get audio features for selected tracks
-  # selected_tracks_audio_features <- reactive({
-  #   if (!is.null(selected_artist()) && !is.null(token)) {
-  #     # Get audio features for the selected tracks
-  #     audio_features <- get_tracks_features(artist_tracks(), token)
-  #     return(audio_features)
-  #   }
-  # })
+  observeEvent(input$album_tracks_table_rows_selected, {
+    # Check if any rows are selected
+    #print(isTRUE(nrow(input$album_tracks_table_rows_selected) == 0))
+    print(input$album_tracks_table_rows_selected)
+    if (length(selected_track()) == 1 &&
+        isTRUE(nrow(input$album_tracks_table_rows_selected) == 0)
+        ) {
+      # Reset the selected track if no rows are selected
+      selected_track(NULL)
+    } else {
+      # Update the selected track when a user clicks on a row in the DataTable
+      selected_row <- input$album_tracks_table_rows_selected
+      # Get the selected track's data
+      selected_track_data <- artist_tracks()[selected_row, ]
+      selected_track(selected_track_data)
+    }
+
+  })
   
   
   # Create the valence vs. energy plot
   output$valence_energy_plot <- renderPlotly({
     audio_features <- artist_tracks()
-    print(audio_features)
     audio_features$energy <- as.numeric(audio_features$energy)
     audio_features$valence <- as.numeric(audio_features$valence)
-    print(audio_features)
     if (!is.null(audio_features)) {
       # Create a scatter plot using plotly
       plot <- ggplot(audio_features, aes(x = valence, y = energy)) +
+        labs(x = "Valence", y = "Energy") +
+        scale_x_continuous(limits = c(0, 1)) +  # Set x-axis limits
+        scale_y_continuous(limits = c(0, 1)) +  # Set y-axis limits
+        theme_minimal() +
+        theme(panel.grid = element_blank()) +
+        theme(panel.border = element_blank()) +
+  
+        # Add vertical and horizontal lines at x = 0.5 and y = 0.5
+        annotate("segment", x = 0.5, xend = 0.5, y = 0, yend = 1, color = "black") +
+        annotate("segment", x = 0, xend = 1, y = 0.5, yend = 0.5, color = "black") +
+        
+        # Color the quadrants with legend
+        geom_rect(aes(xmin = 0, xmax = 0.5, ymin = 0, ymax = 0.5, fill = "Sad"), alpha = 0.2) +
+        geom_rect(aes(xmin = 0.5, xmax = 1, ymin = 0, ymax = 0.5, fill = "Chill"), alpha = 0.2) +
+        geom_rect(aes(xmin = 0, xmax = 0.5, ymin = 0.5, ymax = 1, fill = "Angry"), alpha = 0.2) +
+        geom_rect(aes(xmin = 0.5, xmax = 1, ymin = 0.5, ymax = 1, fill = "Happy"), alpha = 0.2) +
+        
+        scale_fill_manual(values = c("orange","purple", "darkgreen", "blue")) +  # Define fill colors
+        guides(fill = guide_legend(title = "Musical Moods")) + # Customize legend title
         geom_point(aes(text = paste("Song: ", track_name,
                                     "<br>Album: ", album_name,
                                     "<br>Valence: ", valence,
                                     "<br>Energy: ", energy
-                                    ))) +
-        labs(x = "Valence", y = "Energy") 
+        ))) 
+      
+      if (!is.null(selected_track()) && !is.null(selected_track()$track_name)) {
+        # Add a point to highlight the selected track
+        plot <- plot + geom_point(data = selected_track(), aes(text = paste("Song: ", track_name,
+                                                                            "<br>Album: ", album_name,
+                                                                            "<br>Valence: ", valence,
+                                                                            "<br>Energy: ", energy)), 
+                                  color = "red", size = 3)
+        
+      } else {
+        plot <- plot
+      }
+      
       ggplotly(plot, tooltip = "text")
    
     } else {
       return(NULL)  # Return NULL if there is no data
     }
+
+    
   })
   
   output$danceability_density_plot <- renderPlotly({
@@ -185,15 +249,34 @@ server <- function(input, output, session) {
         geom_point(aes(y = 0, text = paste("Song: ", track_name, 
                                            "<br>Album: ", album_name,
                                            "<br>Danceability: ", danceability
-                                           )), 
-                   color = "green", size = 2) +
+        )), 
+        color = "darkgreen", size = 2) +
         labs(x = "Danceability", y = "Density") +
-        theme_minimal()
+        scale_x_continuous(limits = c(0, 1)) +
+        theme_minimal() + 
+        theme(panel.grid = element_blank()) +
+        theme(panel.border = element_blank())
+      
+      if (!is.null(selected_track()) && !is.null(selected_track()$track_name)) {
+        gg_density <- gg_density +
+          geom_point(data = selected_track(),
+                     aes(x = selected_track()$danceability, 
+                         y = 0, 
+                         text = paste("Song: ", selected_track()$track_name, 
+                                      "<br>Album: ", selected_track()$album_name,
+                                      "<br>Danceability: ", selected_track()$danceability
+          )), 
+          color = "red", size = 2)
+      }
+      else {
+        gg_density <- gg_density
+      }
       ggplotly(gg_density, tooltip = "text")
     } else {
       return(NULL)
     }
   })
+
   
   
 }
